@@ -1,0 +1,22 @@
+# PyCharm IDE 相关的文件和目录
+.idea/
+*.iml
+
+# Python 编译文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 平台生成的文件
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Flask 框架运行时生成的文件和目录
+instance/
+*.db
+*.log
+*.swp
+*.swo
+*.egg-info/
