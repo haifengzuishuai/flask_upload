@@ -7,6 +7,7 @@
 from pymysql import connect
 from pymysql.cursors import DictCursor  # 为了返回字典形式
 """
+初始化sql
 CREATE TABLE `random_file` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `file` varchar(500) DEFAULT NULL,
