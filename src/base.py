@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, flash, after_this_request, send_file
 from flask import send_from_directory, jsonify
 
-from src.dbutils.mysql_utils import Random_file
+from dbutils.mysql_utils import Random_file
 
 upload_folder = './file'  # 上传文件需要保存的目录
 allowed_extensions = ['mp4']  # 允许上传的文件格式
@@ -43,26 +43,26 @@ def allowed_file(filename):
 @app.route('/upload', methods=['POST', 'GET'])
 def upload():
     if request.method == 'POST':
-        if 'file' not in request.files:
+        if 'files' not in request.files:
             flash('Please Select File')
             return redirect(url_for('upload'))
-        f = request.files['file']
-        if not allowed_file(f.filename):
-            flash('Please Select Correct File')
-            return redirect(url_for('upload'))
-        if f and allowed_file(f.filename):
-            h1 = hashlib.md5()
-            h1.update((f.filename + str(round(time.time() * 1000))).encode(encoding='utf-8'))
-            file_name = h1.hexdigest() + "." + f.filename.split('.')[1]
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'],
-                                     secure_filename(file_name))
-            f.save(save_path)
-            insert_status = sql_file.insert_filename(file_name)
-            if insert_status == '200':
-                flash('Upload Success')
-            else:
-                flash(insert_status)
-            # return redirect(url_for('show_upload_file', filename=secure_filename(f.filename)))
+        files = request.files.getlist('files')
+        for f in files:
+            if not allowed_file(f.filename):
+                flash('Please Select Correct File')
+                return redirect(url_for('upload'))
+            if f and allowed_file(f.filename):
+                h1 = hashlib.md5()
+                h1.update((f.filename + str(round(time.time() * 1000))).encode(encoding='utf-8'))
+                file_name = h1.hexdigest() + "." + f.filename.split('.')[1]
+                save_path = os.path.join(app.config['UPLOAD_FOLDER'],
+                                         secure_filename(file_name))
+                f.save(save_path)
+                insert_status = sql_file.insert_filename(file_name)
+                if insert_status == '200':
+                    flash('Upload Success')
+                else:
+                    flash(insert_status)
     return render_template('upload.html')
 
 
@@ -96,7 +96,6 @@ def show_upload_file(filename):
 
     # 直接将临时文件作为参数传递给 send_file 函数
     return send_file(temp_file.name, as_attachment=True, download_name=filename)
-
 
 
 @app.route('/get_one')
