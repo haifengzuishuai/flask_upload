@@ -6,9 +6,11 @@
 # Reference: https://dormousehole.readthedocs.io/en/latest/patterns/fileuploads.html
 # Description:
 """
+import errno
 import hashlib
 # Standard library
 import os
+import shutil
 import tempfile
 import time
 
@@ -73,22 +75,28 @@ def show_upload_file(filename):
     """
     sql_file.invalid_file(filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    # 创建一个临时文件
-    with tempfile.TemporaryFile() as temp_file:
-        with open(file_path, 'rb') as f:
-            # 将上传的文件内容复制到临时文件中
-            temp_file.write(f.read())
+    # 创建一个临时文件，并将上传的文件内容复制到临时文件中
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    with open(file_path, 'rb') as f:
+        # 使用 shutil.copyfile 方法将文件复制到临时文件中
+        shutil.copyfileobj(f, temp_file)
+        # 将文件指针移到文件开头
+        temp_file.seek(0)
 
-        @after_this_request
-        def remove_file(response):
-            """
-            在返回响应后删除临时文件以及已下载的文件
-            """
-            temp_file.close()
-            os.remove(file_path)
-            return response
+    # 关闭真实文件
+    f.close()
 
-        return send_file(temp_file, as_attachment=True, download_name=filename)
+    @after_this_request
+    def close_file(response):
+        # 在返回响应后关闭临时文件
+        temp_file.close()
+        # 删除原始文件
+        os.remove(file_path)
+        return response
+
+    # 直接将临时文件作为参数传递给 send_file 函数
+    return send_file(temp_file.name, as_attachment=True, download_name=filename)
+
 
 
 @app.route('/get_one')
